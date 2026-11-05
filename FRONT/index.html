@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GameArena · Panel del administrador</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Chakra+Petch:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/animate.css@4.1.1/animate.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.min.css" rel="stylesheet">
+  <link href="css/estilos.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Portada -->
+  <header id="portada" class="portada">
+    <div class="portada-franja" aria-hidden="true"></div>
+
+    <nav class="container portada-nav" aria-label="Secciones">
+      <span class="portada-marca"><i class="bi bi-controller"></i> GameArena</span>
+      <div class="portada-enlaces">
+        <a href="#panel" data-ir-pestana="tabTorneos">Torneos</a>
+        <a href="#panel" data-ir-pestana="tabJugadores">Jugadores</a>
+        <a href="#panel" data-ir-pestana="tabVideojuegos">Videojuegos</a>
+      </div>
+    </nav>
+
+    <div class="container portada-cuerpo">
+      <div class="portada-texto-col">
+        <h1 class="portada-titulo">Que empiece<br>la competición.</h1>
+        <p class="portada-texto">Crea torneos de tus juegos, inscribe a los jugadores y sigue la clasificación partida a partida desde un único panel.</p>
+        <div class="portada-acciones">
+          <a href="#panel" class="btn btn-primary btn-lg" data-bajar>Entrar al panel</a>
+          <button id="btnPortadaCrear" class="btn btn-lg btn-contorno" type="button"><i class="bi bi-plus-lg me-1"></i>Crear torneo</button>
+        </div>
+        <dl class="portada-cifras">
+          <div><dd id="portadaPremios">–</dd><dt>en premios abiertos</dt></div>
+          <div><dd id="portadaJugadores">–</dd><dt>jugadores registrados</dt></div>
+          <div><dd id="portadaNumJuegos">–</dd><dt>videojuegos</dt></div>
+        </dl>
+      </div>
+
+      <aside class="cartelera" aria-labelledby="carteleraTitulo">
+        <div class="cartelera-cabecera">
+          <h2 id="carteleraTitulo">Próximos torneos</h2>
+          <span id="portadaEstado" class="cartelera-abiertos"></span>
+        </div>
+        <ol id="cartelera" class="cartelera-lista">
+          <li class="cartelera-vacia">Cargando torneos…</li>
+        </ol>
+      </aside>
+    </div>
+
+    <!-- Rótulo deslizante, como en una retransmisión -->
+    <div class="rotulo-directo">
+      <span class="rotulo-etiqueta">Calendario</span>
+      <div class="rotulo-ventana">
+        <div id="rotuloPista" class="rotulo-pista"></div>
+      </div>
+    </div>
+
+    <a href="#panel" class="portada-flecha" data-bajar aria-label="Bajar al panel"><i class="bi bi-chevron-down"></i></a>
+  </header>
+
+  <!-- Cabecera -->
+  <nav id="panel" class="navbar barra sticky-top">
+    <div class="container">
+      <span class="navbar-brand marca">
+        <i class="bi bi-controller"></i> GameArena <span class="marca-sub d-none d-sm-inline">Panel del administrador</span>
+      </span>
+      <span id="conexion" class="badge rounded-pill bg-secondary" title="Estado de la conexión con la API">
+        Sin conectar
+      </span>
+    </div>
+  </nav>
+
+  <main class="container my-4">
+
+    <!-- Zona de avisos (verde, amarillo o rojo) -->
+    <div id="aviso" class="mb-3"></div>
+
+    <!-- Torneo destacado: el próximo torneo abierto -->
+    <section id="destacado" class="destacado" aria-live="polite">
+      <div class="destacado-info">
+        <p class="destacado-tag">Próximo torneo abierto</p>
+        <h1 id="destNombre" class="destacado-nombre">Cargando…</h1>
+        <p id="destDetalle" class="destacado-detalle"></p>
+        <div id="destAcciones" class="destacado-acciones" hidden>
+          <button id="btnDestInscribir" class="btn btn-primary" type="button"><i class="bi bi-person-plus me-1"></i>Inscribir jugador</button>
+          <button id="btnDestInscritos" class="btn btn-outline-light" type="button"><i class="bi bi-people me-1"></i>Ver inscritos</button>
+        </div>
+      </div>
+      <div class="destacado-cuenta">
+        <span id="destDias" class="destacado-dias">–</span>
+        <span id="destDiasTexto" class="destacado-dias-texto">días para empezar</span>
+      </div>
+    </section>
+
+    <!-- Resumen -->
+    <dl class="resumen">
+      <div><dt>Torneos</dt><dd id="statTorneos">–</dd></div>
+      <div><dt>Abiertos</dt><dd id="statAbiertos">–</dd></div>
+      <div><dt>Jugadores</dt><dd id="statJugadores">–</dd></div>
+      <div><dt>Videojuegos</dt><dd id="statJuegos">–</dd></div>
+    </dl>
+
+    <!-- Pestañas -->
+    <ul class="nav nav-pills pestanas mb-3" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button id="tabTorneos" class="nav-link active" data-bs-toggle="tab" data-bs-target="#pestanaTorneos" type="button" role="tab"><i class="bi bi-trophy me-1"></i>Torneos</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button id="tabJugadores" class="nav-link" data-bs-toggle="tab" data-bs-target="#pestanaJugadores" type="button" role="tab"><i class="bi bi-people me-1"></i>Jugadores</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button id="tabVideojuegos" class="nav-link" data-bs-toggle="tab" data-bs-target="#pestanaVideojuegos" type="button" role="tab"><i class="bi bi-joystick me-1"></i>Videojuegos</button>
+      </li>
+    </ul>
+
+    <div class="tab-content">
+
+      <!-- ===================== TORNEOS ===================== -->
+      <section id="pestanaTorneos" class="tab-pane fade show active" role="tabpanel">
+
+        <div class="card tarjeta mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-trophy me-2"></i>Torneos</span>
+            <span id="contTorneos" class="badge text-bg-dark"></span>
+          </div>
+          <div class="card-body">
+            <div class="row g-3 mb-3">
+              <div class="col-lg-7">
+                <label class="form-label">Filtrar torneos</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-funnel"></i></span>
+                  <select id="filtroEstado" class="form-select">
+                    <option value="">Todos los estados</option>
+                    <option value="ABIERTO">ABIERTO</option>
+                    <option value="EN_CURSO">EN_CURSO</option>
+                    <option value="FINALIZADO">FINALIZADO</option>
+                  </select>
+                  <select id="filtroVideojuego" class="form-select">
+                    <option value="">Todos los videojuegos</option>
+                  </select>
+                  <button id="btnLimpiarFiltro" class="btn btn-outline-secondary" type="button" title="Quitar filtros"><i class="bi bi-x-lg"></i></button>
+                </div>
+                <!-- GET /torneos/estado/{estado}: aquí se filtrarán los torneos por estado -->
+                <!-- GET /torneos/videojuego/{id}: aquí se filtrarán los torneos de un videojuego -->
+                <!-- GET /torneos/videojuego/{id}/estado/{estado}: aquí se filtrarán los torneos por videojuego y estado -->
+              </div>
+              <div class="col-lg-5">
+                <label for="buscarTorneoId" class="form-label">Buscar por ID</label>
+                <div class="input-group">
+                  <input id="buscarTorneoId" type="number" min="1" class="form-control" placeholder="Ej. 3">
+                  <button id="btnBuscarTorneo" class="btn btn-primary" type="button"><i class="bi bi-search"></i> Buscar</button>
+                </div>
+                <!-- GET /torneos/{id}: aquí se buscará un torneo por su ID -->
+              </div>
+            </div>
+
+            <div id="resTorneo"></div>
+
+            <div class="input-group buscador-tabla mb-2">
+              <span class="input-group-text"><i class="bi bi-search"></i></span>
+              <input id="filtroTextoTorneos" type="search" class="form-control" placeholder="Busca por nombre de torneo o videojuego" aria-label="Buscar en la tabla de torneos">
+            </div>
+
+            <div class="table-responsive">
+              <table class="table table-hover align-middle tabla">
+                <thead>
+                  <tr data-tabla="torneos"><th class="ordenable" data-orden="id">ID</th><th class="ordenable" data-orden="nombre">Nombre</th><th class="ordenable" data-orden="fecha">Fecha</th><th class="ordenable" data-orden="premio">Premio</th><th class="ordenable" data-orden="estado">Estado</th><th class="ordenable" data-orden="videojuego">Videojuego</th><th class="text-end">Acciones</th></tr>
+                </thead>
+                <tbody id="cuerpoTorneos">
+                  <!-- GET /torneos: aquí se pintarán los torneos -->
+                  <!-- DELETE /torneos/{id}: el botón Eliminar de cada fila borrará el torneo -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="card tarjeta h-100">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span id="tituloFormTorneo"><i class="bi bi-plus-circle me-2"></i>Nuevo torneo</span>
+                <button id="btnCancelarTorneo" class="btn btn-sm btn-outline-secondary" type="button" hidden>Cancelar</button>
+              </div>
+              <div class="card-body">
+                <!-- POST /torneos: aquí se creará un torneo nuevo -->
+                <!-- PUT /torneos/{id}: aquí se guardarán los cambios del torneo al pulsar Editar -->
+                <form id="formTorneo" novalidate>
+                  <div class="mb-3">
+                    <label for="tNombre" class="form-label">Nombre</label>
+                    <input id="tNombre" type="text" class="form-control" required>
+                    <div class="invalid-feedback">Pon un nombre.</div>
+                  </div>
+                  <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                      <label for="tFecha" class="form-label">Fecha</label>
+                      <input id="tFecha" type="date" class="form-control" required>
+                      <div class="invalid-feedback">Elige una fecha.</div>
+                    </div>
+                    <div class="col-sm-6">
+                      <label for="tPremio" class="form-label">Premio (€)</label>
+                      <input id="tPremio" type="number" min="0" step="0.01" class="form-control">
+                    </div>
+                  </div>
+                  <div class="row g-3 mb-3">
+                    <div class="col-sm-6">
+                      <label for="tEstado" class="form-label">Estado</label>
+                      <select id="tEstado" class="form-select" required>
+                        <option value="ABIERTO">ABIERTO</option>
+                        <option value="EN_CURSO">EN_CURSO</option>
+                        <option value="FINALIZADO">FINALIZADO</option>
+                      </select>
+                    </div>
+                    <div class="col-sm-6">
+                      <label for="tVideojuego" class="form-label">Videojuego</label>
+                      <select id="tVideojuego" class="form-select" required>
+                        <option value=""></option>
+                      </select>
+                      <div class="invalid-feedback">Un torneo siempre lleva videojuego.</div>
+                    </div>
+                  </div>
+                  <button id="btnTorneo" type="submit" class="btn btn-success w-100"><i class="bi bi-check2-circle me-1"></i>Crear torneo</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6 d-flex flex-column gap-3">
+            <div class="card tarjeta">
+              <div class="card-header"><i class="bi bi-person-plus me-2"></i>Inscribir jugador en torneo</div>
+              <div class="card-body">
+                <!-- POST /participaciones: aquí se inscribirá un jugador en un torneo -->
+                <form id="formInscripcion" class="row g-2 align-items-end" novalidate>
+                  <div class="col-sm-5">
+                    <label for="iJugador" class="form-label">Jugador</label>
+                    <select id="iJugador" class="form-select" required><option value=""></option></select>
+                  </div>
+                  <div class="col-sm-5">
+                    <label for="iTorneo" class="form-label">Torneo</label>
+                    <select id="iTorneo" class="form-select" required><option value=""></option></select>
+                  </div>
+                  <div class="col-sm-2">
+                    <button id="btnInscribir" type="submit" class="btn btn-success w-100" title="Inscribir"><i class="bi bi-plus-lg"></i></button>
+                  </div>
+                </form>
+                <div id="ayudaInscripcion" class="form-text mt-2" aria-live="polite"></div>
+              </div>
+            </div>
+
+            <div id="panelParticipantesTorneo" class="card tarjeta flex-grow-1" hidden>
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span id="tituloParticipantesTorneo"><i class="bi bi-people me-2"></i>Participantes</span>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-cerrar="panelParticipantesTorneo"><i class="bi bi-x-lg"></i></button>
+              </div>
+              <div class="card-body">
+                <ul id="listaParticipantesTorneo" class="list-group list-group-flush">
+                  <!-- GET /torneos/{id}/participantes: una línea por participante -->
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== JUGADORES ===================== -->
+      <section id="pestanaJugadores" class="tab-pane fade" role="tabpanel">
+
+        <div class="card tarjeta mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-people me-2"></i>Jugadores</span>
+            <span id="contJugadores" class="badge text-bg-dark"></span>
+          </div>
+          <div class="card-body">
+            <div class="row g-3 mb-3">
+              <div class="col-lg-7">
+                <label for="filtroJugadores" class="form-label">Filtrar en la tabla</label>
+                <div class="input-group">
+                  <span class="input-group-text"><i class="bi bi-search"></i></span>
+                  <input id="filtroJugadores" type="search" class="form-control" placeholder="Busca por nick o email">
+                </div>
+              </div>
+              <div class="col-lg-5">
+                <label for="buscarJugadorId" class="form-label">Buscar por ID</label>
+                <div class="input-group">
+                  <input id="buscarJugadorId" type="number" min="1" class="form-control" placeholder="Ej. 2">
+                  <button id="btnBuscarJugador" class="btn btn-primary" type="button"><i class="bi bi-search"></i> Buscar</button>
+                </div>
+                <!-- GET /jugadores/{id}: aquí se buscará un jugador por su ID -->
+              </div>
+            </div>
+
+            <div id="resJugador"></div>
+
+            <div class="table-responsive">
+              <table class="table table-hover align-middle tabla">
+                <thead>
+                  <tr data-tabla="jugadores"><th class="ordenable" data-orden="id">ID</th><th class="ordenable" data-orden="nick">Nick</th><th class="ordenable" data-orden="email">Email</th><th class="ordenable" data-orden="nivel">Nivel</th><th class="text-end">Acciones</th></tr>
+                </thead>
+                <tbody id="cuerpoJugadores">
+                  <!-- GET /jugadores: aquí se pintarán los jugadores -->
+                  <!-- DELETE /jugadores/{id}: el botón Eliminar de cada fila borrará el jugador -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <div class="col-lg-6">
+            <div class="card tarjeta h-100">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span id="tituloFormJugador"><i class="bi bi-person-plus me-2"></i>Nuevo jugador</span>
+                <button id="btnCancelarJugador" class="btn btn-sm btn-outline-secondary" type="button" hidden>Cancelar</button>
+              </div>
+              <div class="card-body">
+                <!-- POST /jugadores: aquí se creará un jugador nuevo -->
+                <!-- PUT /jugadores/{id}: aquí se guardarán los cambios del jugador al pulsar Editar -->
+                <form id="formJugador" novalidate>
+                  <div class="mb-3">
+                    <label for="jNick" class="form-label">Nick</label>
+                    <input id="jNick" type="text" class="form-control" required>
+                    <div class="invalid-feedback">Pon un nick.</div>
+                  </div>
+                  <div class="mb-3">
+                    <label for="jEmail" class="form-label">Email</label>
+                    <input id="jEmail" type="email" class="form-control" required>
+                    <div class="invalid-feedback">Pon un email válido.</div>
+                  </div>
+                  <div class="mb-3">
+                    <label for="jNivel" class="form-label">Nivel</label>
+                    <input id="jNivel" type="number" min="1" class="form-control" required>
+                    <div class="invalid-feedback">El nivel es un número desde 1.</div>
+                  </div>
+                  <button id="btnJugador" type="submit" class="btn btn-success w-100"><i class="bi bi-check2-circle me-1"></i>Crear jugador</button>
+                </form>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <div id="panelTorneosJugador" class="card tarjeta h-100" hidden>
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span id="tituloTorneosJugador"><i class="bi bi-trophy me-2"></i>Torneos del jugador</span>
+                <button class="btn btn-sm btn-outline-secondary" type="button" data-cerrar="panelTorneosJugador"><i class="bi bi-x-lg"></i></button>
+              </div>
+              <div class="card-body">
+                <ul id="listaTorneosJugador" class="list-group list-group-flush">
+                  <!-- GET /jugadores/{id}/participaciones: una línea por torneo -->
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===================== VIDEOJUEGOS ===================== -->
+      <section id="pestanaVideojuegos" class="tab-pane fade" role="tabpanel">
+
+        <div class="row g-3">
+          <div class="col-lg-8">
+            <div class="card tarjeta h-100">
+              <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-joystick me-2"></i>Videojuegos</span>
+                <span id="contJuegos" class="badge text-bg-dark"></span>
+              </div>
+              <div class="card-body">
+                <div class="row g-3 mb-3 justify-content-end">
+                  <div class="col-lg-7">
+                    <label for="buscarJuegoId" class="form-label">Buscar por ID</label>
+                    <div class="input-group">
+                      <input id="buscarJuegoId" type="number" min="1" class="form-control" placeholder="Ej. 1">
+                      <button id="btnBuscarJuego" class="btn btn-primary" type="button"><i class="bi bi-search"></i> Buscar</button>
+                    </div>
+                    <!-- GET /videojuegos/{id}: aquí se buscará un videojuego por su ID -->
+                  </div>
+                </div>
+
+                <div id="resJuego"></div>
+
+                <!-- Sin columna de acciones: los videojuegos no se modifican ni se eliminan -->
+                <div class="table-responsive">
+                  <table class="table table-hover align-middle tabla">
+                    <thead><tr><th>ID</th><th>Nombre</th><th>Género</th><th class="text-end">Torneos</th></tr></thead>
+                    <tbody id="cuerpoJuegos">
+                      <!-- GET /videojuegos: aquí se pintarán los videojuegos -->
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-4">
+            <div class="card tarjeta">
+              <div class="card-header"><i class="bi bi-plus-circle me-2"></i>Nuevo videojuego</div>
+              <div class="card-body">
+                <!-- POST /videojuegos: aquí se creará un videojuego nuevo -->
+                <form id="formJuego" novalidate>
+                  <div class="mb-3">
+                    <label for="gNombre" class="form-label">Nombre</label>
+                    <input id="gNombre" type="text" class="form-control" required>
+                    <div class="invalid-feedback">Pon un nombre.</div>
+                  </div>
+                  <div class="mb-3">
+                    <label for="gGenero" class="form-label">Género</label>
+                    <input id="gGenero" type="text" class="form-control" required list="generos">
+                    <datalist id="generos">
+                      <option value="Shooter"><option value="MOBA"><option value="Deportes"><option value="Battle Royale"><option value="Lucha">
+                    </datalist>
+                    <div class="invalid-feedback">Pon un género.</div>
+                  </div>
+                  <button id="btnJuego" type="submit" class="btn btn-success w-100"><i class="bi bi-check2-circle me-1"></i>Crear videojuego</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <footer class="text-center text-secondary small py-4">GameArena · Desarrollo Web en Entorno Cliente</footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.14.5/dist/sweetalert2.all.min.js"></script>
+  <script src="js/demo.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
